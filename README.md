@@ -2,7 +2,7 @@
 
 A dynamic height textarea component for [Bubble Tea](https://github.com/charmbracelet/bubbletea) applications.
 
-This component extends the functionality of [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) textarea wih support for dynamic height. The textarea automatically grows and shrinks in height based on its content, respecting a configurable maximum height.
+This component extends the functionality of [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) textarea with support for dynamic height. The textarea automatically grows and shrinks in height based on its content, respecting a configurable maximum height.
 
 ## Usage
 
