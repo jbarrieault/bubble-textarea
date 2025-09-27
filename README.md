@@ -4,6 +4,8 @@ A dynamic height textarea component for [Bubble Tea](https://github.com/charmbra
 
 This component extends the wonderful [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) `textarea` with support for dynamic height. The textarea can be configured to automatically grow and shrink in height based on its content, respecting a configurable maximum visual height.
 
+<img src="./example/example.gif" width="600" alt="Bubble Textarea Demo">
+
 ## Usage
 
 Dynamic height is enabled by calling `SetMaxVisualHeight` with a positive integer:
