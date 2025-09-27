@@ -192,7 +192,8 @@ type Model struct {
 	cache *memoization.MemoCache[line, [][]rune]
 
 	// DynamicHeight, if enabled, causes the textarea height to automatically
-	// adjust based on the content, up to MaxHeight.
+	// adjust based on the content, up to MaxVisualHeight.
+	// This field is automatically set based on MaxVisualHeight (> 0 enables it).
 	DynamicHeight bool
 
 	// Prompt is printed at the beginning of each line.
@@ -237,6 +238,12 @@ type Model struct {
 	// MaxHeight is the maximum height of the text area in rows. If 0 or less,
 	// there's no limit.
 	MaxHeight int
+
+	// MaxVisualHeight is the maximum visual (rendered) height of the text area in rows.
+	// When content exceeds this height, the textarea switches to viewport scrolling.
+	// If 0, dynamic height is disabled and the textarea uses a fixed height.
+	// If > 0, dynamic height is enabled and grows up to this limit.
+	MaxVisualHeight int
 
 	// MaxWidth is the maximum width of the text area in columns. If 0 or less,
 	// there's no limit.
@@ -294,6 +301,7 @@ func New() Model {
 	m := Model{
 		CharLimit:            defaultCharLimit,
 		MaxHeight:            defaultMaxHeight,
+		MaxVisualHeight:      0, // Dynamic height disabled by default
 		MaxWidth:             defaultMaxWidth,
 		Prompt:               lipgloss.ThickBorder().Left + " ",
 		style:                &blurredStyle,
@@ -403,8 +411,8 @@ func (m *Model) insertRunesFromUserInput(runes []rune) {
 	}
 
 	// Obey the maximum line limit.
-	if maxLines > 0 && len(m.value)+len(lines)-1 > maxLines {
-		allowedHeight := max(0, maxLines-len(m.value)+1)
+	if m.MaxHeight > 0 && len(m.value)+len(lines)-1 > m.MaxHeight {
+		allowedHeight := max(0, m.MaxHeight-len(m.value)+1)
 		lines = lines[:allowedHeight]
 	}
 
@@ -932,7 +940,7 @@ func (m *Model) SetWidth(w int) {
 	m.viewport.Width = inputWidth - reservedOuter
 	m.width = inputWidth - reservedOuter - reservedInner
 
-	// Recalculate height if dynamic height is enabled, since width changes affect wrapping
+	// Recalculate height if MaxVisualHeight > 0, since width changes affect wrapping
 	m.updateDynamicHeight()
 }
 
@@ -980,30 +988,36 @@ func (m Model) CalculateContentHeight() int {
 	return max(totalLines, minHeight)
 }
 
-// updateDynamicHeight updates the height based on content if DynamicHeight is enabled.
+// updateDynamicHeight updates the height based on content if MaxVisualHeight > 0.
 func (m *Model) updateDynamicHeight() {
-	if !m.DynamicHeight {
+	if m.MaxVisualHeight <= 0 {
 		return
 	}
 
 	contentHeight := m.CalculateContentHeight()
 
-	// Clamp to MaxHeight if set
-	if m.MaxHeight > 0 {
-		contentHeight = min(contentHeight, m.MaxHeight)
-	}
+	// Clamp to MaxVisualHeight
+	contentHeight = min(contentHeight, m.MaxVisualHeight)
 
 	m.height = contentHeight
 	m.viewport.Height = contentHeight
 }
 
-// SetDynamicHeight enables or disables dynamic height functionality.
-// When enabled, the textarea height automatically adjusts based on content.
-func (m *Model) SetDynamicHeight(enabled bool) {
-	m.DynamicHeight = enabled
-	if enabled {
+// SetMaxVisualHeight sets the maximum visual height of the textarea.
+// If maxVisualHeight > 0, dynamic height is enabled and the textarea will grow
+// up to this limit before switching to viewport scrolling.
+// If maxVisualHeight = 0, dynamic height is disabled and textarea uses fixed height.
+func (m *Model) SetMaxVisualHeight(maxVisualHeight int) {
+	m.MaxVisualHeight = maxVisualHeight
+	if maxVisualHeight > 0 {
 		m.updateDynamicHeight()
 	}
+}
+
+// GetDynamicHeight returns whether dynamic height is currently enabled.
+// Dynamic height is enabled when MaxVisualHeight > 0.
+func (m Model) GetDynamicHeight() bool {
+	return m.MaxVisualHeight > 0
 }
 
 // Update is the Bubble Tea update loop.

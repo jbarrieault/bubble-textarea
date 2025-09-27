@@ -2,23 +2,16 @@
 
 A dynamic height textarea component for [Bubble Tea](https://github.com/charmbracelet/bubbletea) applications.
 
-This component extends the functionality of [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) textarea with support for dynamic height. The textarea automatically grows and shrinks in height based on its content, respecting a configurable maximum height.
+This component extends the wonderful [charmbracelet/bubbles](https://github.com/charmbracelet/bubbles) `textarea` with support for dynamic height. The textarea can be configured to automatically grow and shrink in height based on its content, respecting a configurable maximum visual height.
 
 ## Usage
 
-### Key Methods for Dynamic Height
+Dynamic height is enabled by calling `SetMaxVisualHeight` with a positive integer:
 
 ```go
 ta := textarea.New()
-
-// Enable or disable dynamic height functionality
-ta.SetDynamicHeight(true)
-
-// Set initial height (will grow from this size)
-ta.SetHeight(1)
-
-// Set maximum height (component will scroll when exceeded)
-ta.MaxHeight = 10
+// Allow the rendered height to grow up to 10 lines of content, including both hard & soft line breaks.
+ta.SetMaxVisualHeight(10)
 ```
 
 ### Basic Example
@@ -39,11 +32,10 @@ func initialModel() model {
     ta := textarea.New()
     ta.Placeholder = "Start typing..."
     ta.Focus()
+    ta.SetHeight(1)
 
-    // Enable dynamic height
-    ta.SetDynamicHeight(true)
-    ta.SetHeight(1)      // Start with 1 line
-    ta.MaxHeight = 10    // Grow up to 10 lines before viewport scrolling kicks in
+    // Enables dynamic height; Grow up to 10 lines before viewport scrolling kicks in
+    ta.SetMaxVisualHeight(10)
 
     return model{textarea: ta}
 }
@@ -59,16 +51,10 @@ func (m model) View() string {
 }
 ```
 
-
-
 ## Example
 
 See the [example](./example/) directory for a complete working application that demonstrates the dynamic height functionality.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## Credits
-
-This project is just a small extension of the wonderful [charmbracelet/bubbles/textarea](https://github.com/charmbracelet/bubbles/tree/main/textarea).
+MIT License - see [LICENSE](LICENSE) for details.

@@ -1,14 +1,15 @@
 package textarea
 
 import (
+	"strings"
 	"testing"
 )
 
 func TestDynamicHeight(t *testing.T) {
 	ta := New()
-	ta.SetWidth(20) // Small width to force wrapping
-	ta.MaxHeight = 10
-	ta.SetDynamicHeight(true)
+	ta.SetWidth(20)           // Small width to force wrapping
+	ta.MaxHeight = 100        // Allow many content lines
+	ta.SetMaxVisualHeight(10) // But limit visual height to 10
 
 	// Empty textarea should have height 1
 	if ta.Height() != 1 {
@@ -37,22 +38,118 @@ func TestDynamicHeight(t *testing.T) {
 		t.Errorf("Long wrapping line should have height > 1, got %d", ta.Height())
 	}
 
-	// Height should not exceed MaxHeight
+	// Height should not exceed MaxVisualHeight
 	manyLines := ""
 	for i := 0; i < 15; i++ {
 		manyLines += "Line " + string(rune('A'+i)) + "\n"
 	}
 	ta.SetValue(manyLines)
-	if ta.Height() > ta.MaxHeight {
-		t.Errorf("Height %d should not exceed MaxHeight %d", ta.Height(), ta.MaxHeight)
+	if ta.Height() > ta.MaxVisualHeight {
+		t.Errorf("Height %d should not exceed MaxVisualHeight %d", ta.Height(), ta.MaxVisualHeight)
 	}
 
 	// Disabling dynamic height should keep current height
-	ta.SetDynamicHeight(false)
+	ta.SetMaxVisualHeight(0)
 	initialHeight := ta.Height()
 	ta.SetValue("Short")
 	if ta.Height() != initialHeight {
 		t.Errorf("With dynamic height disabled, height should remain %d, got %d", initialHeight, ta.Height())
+	}
+}
+
+func TestMaxHeightGreaterThanMaxVisualHeight(t *testing.T) {
+	// Test scenario: MaxHeight > MaxVisualHeight
+	// Should allow more content lines than visual height
+	ta := New()
+	ta.SetWidth(20)
+	ta.MaxHeight = 100       // Allow up to 100 content lines
+	ta.SetMaxVisualHeight(3) // But only show 3 lines visually
+
+	// Should be able to add newlines beyond the visual height limit
+	lines := []string{}
+	for i := 0; i < 10; i++ {
+		lines = append(lines, "Line "+string(rune('A'+i)))
+	}
+	content := strings.Join(lines, "\n")
+	ta.SetValue(content)
+
+	// Visual height should be clamped to MaxVisualHeight
+	if ta.Height() != 3 {
+		t.Errorf("Visual height should be 3 (MaxVisualHeight), got %d", ta.Height())
+	}
+
+	// Content should have all 10 lines
+	if ta.LineCount() != 10 {
+		t.Errorf("Content should have 10 lines, got %d", ta.LineCount())
+	}
+
+	// Should be able to add more lines up to MaxHeight
+	moreLines := []string{}
+	for i := 0; i < 20; i++ {
+		moreLines = append(moreLines, "Line "+string(rune('A'+i)))
+	}
+	moreContent := strings.Join(moreLines, "\n")
+	ta.SetValue(moreContent)
+
+	// Visual height should still be clamped
+	if ta.Height() != 3 {
+		t.Errorf("Visual height should still be 3, got %d", ta.Height())
+	}
+
+	// Content should have all 20 lines
+	if ta.LineCount() != 20 {
+		t.Errorf("Content should have 20 lines, got %d", ta.LineCount())
+	}
+}
+
+func TestMaxHeightLessThanMaxVisualHeight(t *testing.T) {
+	// Test scenario: MaxHeight < MaxVisualHeight
+	// Content constraint should kick in before visual constraint
+	ta := New()
+	ta.SetWidth(20)
+	ta.MaxHeight = 3          // Only allow 3 content lines
+	ta.SetMaxVisualHeight(10) // But visual could grow to 10
+
+	// Should not be able to add more than 3 lines
+	lines := []string{}
+	for i := 0; i < 10; i++ {
+		lines = append(lines, "Line "+string(rune('A'+i)))
+	}
+	content := strings.Join(lines, "\n")
+	ta.SetValue(content)
+
+	// Content should be limited to MaxHeight
+	if ta.LineCount() > 3 {
+		t.Errorf("Content should be limited to 3 lines (MaxHeight), got %d", ta.LineCount())
+	}
+
+	// Visual height should match content (since content is limited)
+	if ta.Height() > 3 {
+		t.Errorf("Visual height should not exceed 3, got %d", ta.Height())
+	}
+}
+
+func TestMaxVisualHeightZeroDisabled(t *testing.T) {
+	// Test scenario: MaxVisualHeight = 0 (disabled)
+	// Should use fixed height, no dynamic resizing
+	ta := New()
+	ta.SetWidth(20)
+	ta.SetHeight(5)          // Set fixed height
+	ta.MaxHeight = 100       // Allow many content lines
+	ta.SetMaxVisualHeight(0) // Disable dynamic height
+
+	initialHeight := ta.Height()
+
+	// Adding content should not change height
+	ta.SetValue("Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7")
+
+	if ta.Height() != initialHeight {
+		t.Errorf("Height should remain fixed at %d when MaxVisualHeight=0, got %d", initialHeight, ta.Height())
+	}
+
+	// Should still be able to add content lines
+	if ta.LineCount() != 7 {
+		t.Errorf("Should have 7 content lines, got %d", ta.LineCount())
 	}
 }
 

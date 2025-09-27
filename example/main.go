@@ -28,10 +28,10 @@ func initialModel() model {
 		return "  "
 	})
 
-	// Enable dynamic height with a maximum height
+	// Enable dynamic height with a maximum visual height of 3
 	ta.SetHeight(1)
-	ta.MaxHeight = 5
-	ta.SetDynamicHeight(true)
+	ta.MaxHeight = 10        // Allow up to 10 actual (hard) lines of content
+	ta.SetMaxVisualHeight(3) // But only grow visually to 3 lines before scrolling
 
 	ta.MaxWidth = 0
 
@@ -86,9 +86,10 @@ func (m model) View() string {
 		Foreground(lipgloss.Color("240")).
 		Align(lipgloss.Center).
 		Render(fmt.Sprintf(
-			"Visual Height: %d | Max Height: %d | "+
+			"Visual Height: %d | Max Visual Height: %d | Max Content Lines: %d | "+
 				"Hard Line Count: %d | Value Length: %d | m.width: %d\n",
 			m.textarea.Height(),
+			m.textarea.MaxVisualHeight,
 			m.textarea.MaxHeight,
 			m.textarea.LineCount(),
 			len(m.textarea.Value()),
